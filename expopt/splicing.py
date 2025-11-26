@@ -12,17 +12,12 @@ from itertools import permutations, product
 
 try:
     from rdkit import Chem
-    from rdkit.Chem import AllChem, rdMolDescriptors
     from rdkit.Chem.Fingerprints import FingerprintMols
     from rdkit import DataStructs
-    from rdkit.Chem import rdmolops
 except ImportError:
     Chem = None
-    AllChem = None
-    rdMolDescriptors = None
     FingerprintMols = None
     DataStructs = None
-    rdmolops = None
 
 
 @dataclass
