@@ -1,2 +1,150 @@
-# expopt
-for medicine  and   chemistry
+# ExpOpt
+
+A Python package for RGroup replacement and CoreHopping using RDKit.
+
+## Overview
+
+ExpOpt provides tools for molecular optimization in drug discovery, supporting:
+
+- **RGroup Replacement**: Find candidate fragments to replace target segments while maintaining similar properties and ligand site matches
+- **CoreHopping**: Replace core skeletons while maintaining side chains and key functional groups
+- **Fragment/Scaffold Splicing**: Attach replacement fragments to scaffolds and enumerate connection configurations
+
+## Installation
+
+```bash
+pip install rdkit
+pip install -e .
+```
+
+## Quick Start
+
+### RGroup Replacement
+
+```python
+from expopt import RGroupReplacement
+
+# Initialize the replacement workflow
+rgroup = RGroupReplacement()
+
+# Find replacements for a target fragment
+candidates = rgroup.find_replacements(
+    target_fragment="NC(=O)C",  # Acetamide
+    scaffold_smiles="c1ccccc1"  # Optional scaffold context
+)
+
+# Get replacement SMILES with scores
+results = rgroup.get_replacement_molecules("NC(=O)C")
+for smiles, score in results:
+    print(f"{smiles}: {score:.3f}")
+```
+
+### CoreHopping
+
+```python
+from expopt import CoreHopping
+
+# Initialize core hopping workflow
+hopping = CoreHopping()
+
+# Find alternative cores
+candidates = hopping.find_alternative_cores(
+    target_core="c1ccccc1",  # Benzene
+    min_connection_sites=4
+)
+
+# Get alternative core SMILES with scores
+results = hopping.get_alternative_core_molecules("c1ccccc1")
+for smiles, score in results:
+    print(f"{smiles}: {score:.3f}")
+```
+
+### Fragment Splicing
+
+```python
+from expopt import RGroupSplicing, CoreSplicing
+
+# RGroup splicing - attach fragment to scaffold
+rgroup_splicer = RGroupSplicing()
+result = rgroup_splicer.splice_fragment(
+    scaffold_smiles="c1ccccc1",
+    fragment_smiles="C",
+    scaffold_attach_idx=0,
+    fragment_attach_idx=0
+)
+
+# Core splicing - attach sidechains to core
+core_splicer = CoreSplicing()
+results = core_splicer.splice_and_rank(
+    core_smiles="c1ccccc1",
+    sidechains=["C", "O"],
+    reference_smiles="Cc1ccc(O)cc1",
+    top_n=10
+)
+```
+
+## Workflow Details
+
+### RGroup Replacement Workflow
+
+1. **Precise Matching** (Database Hits):
+   - Search database for patent records and scaffolds
+   - Find alternative fragments under the same scaffold
+   - Rank by physicochemical property scoring
+
+2. **Fallback** (No database hits):
+   - Apply atom count constraint: count ≥ (target - 3) and ≤ (target × 1.5)
+   - Score by physicochemical properties
+   - Refine top 1000 by shape and ESP similarity
+
+### CoreHopping Workflow
+
+1. **Constraints**:
+   - Atom count within target range
+   - Connection sites ≥ target core sites
+
+2. **Precise Matching**:
+   - Search database for cores used in patents
+   - Rank by property and similarity scoring
+
+3. **Fallback**:
+   - Filter to top 1000 by physicochemical scores
+   - Refine using shape and ESP similarity
+
+## API Reference
+
+### Main Classes
+
+- `RGroupReplacement`: RGroup replacement workflow
+- `CoreHopping`: Core hopping workflow  
+- `RGroupSplicing`: Fragment attachment utilities
+- `CoreSplicing`: Core splicing with sidechain enumeration
+
+### Utility Classes
+
+- `PhysicochemicalScorer`: Property calculation and scoring
+- `SimilarityCalculator`: Fingerprint, shape, and ESP similarity
+- `AtomCountConstraint`: Atom count filtering
+- `ConnectionSiteConstraint`: Connection site filtering
+
+### Database Interface
+
+- `DatabaseInterface`: Abstract interface for database operations
+- `MockDatabase`: Sample implementation for testing
+
+## Development
+
+```bash
+# Install dev dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest tests/
+
+# Run with coverage
+pytest tests/ --cov=expopt
+```
+
+## License
+
+MIT License
